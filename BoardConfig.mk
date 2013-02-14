@@ -7,6 +7,7 @@ TARGET_NO_BOOTLOADER := true
 TARGET_BOARD_PLATFORM := unknown
 TARGET_CPU_ABI := armeabi
 TARGET_BOOTLOADER_BOARD_NAME := puccinilte
+TARGET_ARCH := arm
 
 BOARD_KERNEL_CMDLINE := console=ttyHSL0 androidboot.hardware=verdilte no_console_suspend=1
 BOARD_KERNEL_BASE := 0x48000000
