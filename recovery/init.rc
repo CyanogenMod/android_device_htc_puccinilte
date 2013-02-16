@@ -1,0 +1,96 @@
+import /init.recovery.${ro.hardware}.rc
+
+on early-init
+    start ueventd
+
+on init
+    export PATH /sbin
+    export ANDROID_ROOT /system
+    export ANDROID_DATA /data
+    export EXTERNAL_STORAGE /sdcard
+
+    symlink /system/etc /etc
+
+    mkdir /boot
+    mkdir /sdcard
+    mkdir /sd-ext
+    mkdir /datadata
+    mkdir /emmc
+    mkdir /system
+    mkdir /data
+    mkdir /cache
+    mount /tmp /tmp tmpfs
+
+    chown root shell /tmp
+    chmod 0775 /tmp
+
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 18D1
+    write /sys/class/android_usb/android0/idProduct D001
+    write /sys/class/android_usb/android0/functions adb
+    write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
+    write /sys/class/android_usb/android0/iProduct ${ro.product.model}
+    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+
+
+on boot
+
+    ifup lo
+    hostname localhost
+    domainname localdomain
+
+    # Enable Google format for report touch event
+    write /sys/android_touch/event_google 1
+
+    # set ntrig touch permissions for HTC
+    chown system system /dev/ntrig_touch
+    chmod 0640 /dev/ntrig_touch
+
+    # set ntrig touch permissions for HTC
+    chown system system /dev/ntrig_analysis
+    chmod 0640 /dev/ntrig_analysis
+    class_start default
+
+service ueventd /sbin/ueventd
+    critical
+
+# ntrig_touch daemon
+#service ntrig_touchd /res/touchs/ntrig_touchd
+service ntrig_touchd /system/bin/ntrig_touchd
+    user system
+    group system misc input
+
+service choice_fn /sbin/choice_fn
+    oneshot
+
+service recovery /sbin/recovery
+    disabled
+
+service power_test /sbin/power_test
+    disabled
+    oneshot
+
+service offmode_charging /sbin/offmode_charging
+    disabled
+    oneshot
+
+service detect_key /sbin/detect_key
+    disabled
+    oneshot
+
+service htcbatt /sbin/htcbatt
+    oneshot
+service adbd /sbin/adbd recovery
+    disabled
+
+# Always start adbd on userdebug and eng builds
+on property:ro.debuggable=1
+    #write /sys/class/android_usb/android0/enable 1
+    #start adbd
+    setprop service.adb.root 1
+
+# Restart adbd so it can run as root
+on property:service.adb.root=1
+    write /sys/class/android_usb/android0/enable 0
+    restart adbd
+    write /sys/class/android_usb/android0/enable 1
